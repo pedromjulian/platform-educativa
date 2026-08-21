@@ -37,6 +37,23 @@ export const coursesAPI = {
   listStudents: (courseId: number) => api.get(`/courses/${courseId}/students`),
 }
 
+export const materialsAPI = {
+  list: (courseId: number) => api.get(`/courses/${courseId}/materials`),
+  upload: (courseId: number, file: File, name: string, description?: string) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('name', name)
+    if (description) formData.append('description', description)
+    return api.post(`/courses/${courseId}/materials`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  delete: (courseId: number, materialId: number) =>
+    api.delete(`/courses/${courseId}/materials/${materialId}`),
+  downloadUrl: (courseId: number, materialId: number) =>
+    `/courses/${courseId}/materials/${materialId}/download`,
+}
+
 export const assignmentsAPI = {
   listAssignments: (courseId: number) =>
     api.get(`/courses/${courseId}/assignments`),
@@ -52,6 +69,65 @@ export const assignmentsAPI = {
   },
   getSubmission: (assignmentId: number) =>
     api.get(`/assignments/${assignmentId}/submission`),
+  listSubmissions: (courseId: number, assignmentId: number) =>
+    api.get(`/courses/${courseId}/assignments/${assignmentId}/submissions`),
+  downloadSubmissionUrl: (courseId: number, submissionId: number) =>
+    `/courses/${courseId}/submissions/${submissionId}/download`,
+}
+
+export const gradingAPI = {
+  gradeSubmission: (courseId: number, submissionId: number, grade: number, feedback?: string) =>
+    api.patch(`/courses/${courseId}/submissions/${submissionId}/grade`, { grade, feedback }),
+}
+
+export interface QuizOptionInput {
+  text: string
+  fraction: number
+}
+
+export interface QuizQuestionInput {
+  text: string
+  options: QuizOptionInput[]
+}
+
+export interface QuizCreateInput {
+  title: string
+  description?: string
+  deadline?: string
+  questions: QuizQuestionInput[]
+}
+
+export interface QuizAnswerInput {
+  question_id: number
+  selected_option_ids: number[]
+}
+
+export const quizzesAPI = {
+  list: (courseId: number) => api.get(`/courses/${courseId}/quizzes`),
+  create: (courseId: number, payload: QuizCreateInput) =>
+    api.post(`/courses/${courseId}/quizzes`, payload),
+  getTeacherView: (courseId: number, quizId: number) =>
+    api.get(`/courses/${courseId}/quizzes/${quizId}`),
+  delete: (courseId: number, quizId: number) =>
+    api.delete(`/courses/${courseId}/quizzes/${quizId}`),
+  take: (quizId: number) => api.get(`/quizzes/${quizId}/take`),
+  submit: (quizId: number, answers: QuizAnswerInput[]) =>
+    api.post(`/quizzes/${quizId}/submit`, { answers }),
+  getMySubmission: (quizId: number) => api.get(`/quizzes/${quizId}/submission`),
+  exportStats: (courseId: number, quizId: number) =>
+    api.get(`/courses/${courseId}/quizzes/${quizId}/submissions/export`),
+}
+
+export const downloadFile = async (url: string, filename: string) => {
+  const res = await api.get(url, { responseType: 'blob' })
+  const blobUrl = window.URL.createObjectURL(new Blob([res.data]))
+  const link = document.createElement('a')
+  link.href = blobUrl
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(blobUrl)
 }
 
 export default api

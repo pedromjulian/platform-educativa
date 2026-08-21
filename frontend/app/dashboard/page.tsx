@@ -19,6 +19,8 @@ export default function DashboardPage() {
   const [role, setRole] = useState<string | null>(null)
   const [newCourseName, setNewCourseName] = useState('')
   const [newCourseDesc, setNewCourseDesc] = useState('')
+  const [joinCourseId, setJoinCourseId] = useState('')
+  const [joinError, setJoinError] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -59,6 +61,23 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
+  const handleJoinCourse = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setJoinError('')
+    const courseId = parseInt(joinCourseId, 10)
+    if (isNaN(courseId)) {
+      setJoinError('Ingresá un ID de curso válido')
+      return
+    }
+    try {
+      await coursesAPI.enrollCourse(courseId)
+      setJoinCourseId('')
+      loadCourses()
+    } catch (err: any) {
+      setJoinError(err.response?.data?.detail || 'No se pudo unir al curso')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
@@ -72,6 +91,29 @@ export default function DashboardPage() {
       </nav>
 
       <div className="max-w-6xl mx-auto p-8">
+        {role === 'student' && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Unirme a un Curso</h2>
+            <form onSubmit={handleJoinCourse} className="flex gap-4">
+              <input
+                type="text"
+                placeholder="ID del curso"
+                value={joinCourseId}
+                onChange={(e) => setJoinCourseId(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium"
+              >
+                Unirme
+              </button>
+            </form>
+            {joinError && <p className="text-red-600 text-sm mt-2">{joinError}</p>}
+          </div>
+        )}
+
         {role === 'teacher' && (
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Crear Nuevo Curso</h2>
@@ -120,7 +162,8 @@ export default function DashboardPage() {
                   onClick={() => router.push(`/courses/${course.id}`)}
                   className="bg-white rounded-lg shadow p-6 hover:shadow-lg cursor-pointer transition"
                 >
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">{course.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-800 mb-1">{course.name}</h3>
+                  <p className="text-xs text-gray-400 mb-2">ID: {course.id}</p>
                   <p className="text-gray-600 mb-4">{course.description || 'Sin descripción'}</p>
                   <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                     Ver Curso
