@@ -32,9 +32,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def verify_token(credentials: HTTPAuthorizationCredentials, db: Session = Depends(get_db)) -> User:
     try:
         payload = jwt.decode(credentials.credentials, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        sub = payload.get("sub")
+        if sub is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        user_id = int(sub)
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
