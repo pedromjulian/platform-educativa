@@ -19,4 +19,6 @@ COPY . .
 EXPOSE 8000
 
 # Run app (Railway assigns the port dynamically via $PORT)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# --proxy-headers + --forwarded-allow-ips makes uvicorn trust X-Forwarded-Proto
+# from Railway's edge, so redirects (e.g. /courses -> /courses/) keep https://
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'
