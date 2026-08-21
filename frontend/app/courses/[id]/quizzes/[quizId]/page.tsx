@@ -152,12 +152,6 @@ export default function QuizDetailPage() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm('¿Eliminar este cuestionario?')) return
-    await quizzesAPI.delete(courseId, quizId)
-    router.push(`/courses/${courseId}`)
-  }
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-600">Cargando...</div>
   }
@@ -176,16 +170,14 @@ export default function QuizDetailPage() {
       <div className="max-w-4xl mx-auto p-8">
         {role === 'teacher' && teacherQuiz && stats && (
           <div>
-            <div className="bg-white rounded-lg shadow p-6 mb-6 flex justify-between items-center">
-              <div>
-                <p className="text-gray-700">Entregas: {stats.total_submissions}</p>
-                <p className="text-gray-700">
-                  Nota promedio: {stats.average_score !== null ? stats.average_score.toFixed(2) : '—'} / 10
-                </p>
-              </div>
-              <button onClick={handleDelete} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm">
-                Eliminar Cuestionario
-              </button>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-blue-800">
+              Panel de solo lectura. Para editar/eliminar, usá Claude Code (<code>cli/README.md</code>).
+            </div>
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <p className="text-gray-700">Entregas: {stats.total_submissions}</p>
+              <p className="text-gray-700">
+                Nota promedio: {stats.average_score !== null ? stats.average_score.toFixed(2) : '—'} / 10
+              </p>
             </div>
 
             <div className="space-y-4">

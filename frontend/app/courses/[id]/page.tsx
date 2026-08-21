@@ -40,6 +40,16 @@ interface Student {
   student: { id: number; name: string; email: string }
 }
 
+interface AssignmentSummary {
+  submitted: number
+  graded: number
+}
+
+interface QuizSummary {
+  totalSubmissions: number
+  averageScore: number | null
+}
+
 type Tab = 'material' | 'actividades' | 'cuestionarios' | 'estudiantes'
 
 export default function CourseDetailPage() {
@@ -58,13 +68,8 @@ export default function CourseDetailPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [students, setStudents] = useState<Student[]>([])
 
-  const [materialFile, setMaterialFile] = useState<File | null>(null)
-  const [materialName, setMaterialName] = useState('')
-  const [materialDesc, setMaterialDesc] = useState('')
-
-  const [assignmentTitle, setAssignmentTitle] = useState('')
-  const [assignmentDesc, setAssignmentDesc] = useState('')
-  const [assignmentDeadline, setAssignmentDeadline] = useState('')
+  const [assignmentSummaries, setAssignmentSummaries] = useState<Record<number, AssignmentSummary>>({})
+  const [quizSummaries, setQuizSummaries] = useState<Record<number, QuizSummary>>({})
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -93,9 +98,27 @@ export default function CourseDetailPage() {
       setAssignments(assignmentsRes.data)
       setQuizzes(quizzesRes.data)
 
-      if (localStorage.getItem('role') === 'teacher') {
+      const isTeacher = localStorage.getItem('role') === 'teacher'
+      if (isTeacher) {
         const studentsRes = await coursesAPI.listStudents(courseId)
         setStudents(studentsRes.data)
+
+        const assignmentSummaryEntries = await Promise.all(
+          (assignmentsRes.data as Assignment[]).map(async (a) => {
+            const subsRes = await assignmentsAPI.listSubmissions(courseId, a.id)
+            const subs = subsRes.data as { status: string }[]
+            return [a.id, { submitted: subs.length, graded: subs.filter((s) => s.status === 'graded').length }] as const
+          })
+        )
+        setAssignmentSummaries(Object.fromEntries(assignmentSummaryEntries))
+
+        const quizSummaryEntries = await Promise.all(
+          (quizzesRes.data as Quiz[]).map(async (q) => {
+            const statsRes = await quizzesAPI.exportStats(courseId, q.id)
+            return [q.id, { totalSubmissions: statsRes.data.total_submissions, averageScore: statsRes.data.average_score }] as const
+          })
+        )
+        setQuizSummaries(Object.fromEntries(quizSummaryEntries))
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'No se pudo cargar el curso')
@@ -104,47 +127,8 @@ export default function CourseDetailPage() {
     }
   }
 
-  const handleUploadMaterial = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!materialFile) return
-    try {
-      await materialsAPI.upload(courseId, materialFile, materialName || materialFile.name, materialDesc)
-      setMaterialFile(null)
-      setMaterialName('')
-      setMaterialDesc('')
-      const res = await materialsAPI.list(courseId)
-      setMaterials(res.data)
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al subir material')
-    }
-  }
-
-  const handleDeleteMaterial = async (materialId: number) => {
-    if (!confirm('¿Eliminar este material?')) return
-    await materialsAPI.delete(courseId, materialId)
-    const res = await materialsAPI.list(courseId)
-    setMaterials(res.data)
-  }
-
   const handleDownloadMaterial = async (material: Material) => {
     await downloadFile(materialsAPI.downloadUrl(courseId, material.id), material.name)
-  }
-
-  const handleCreateAssignment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await assignmentsAPI.createAssignment(
-        courseId, assignmentTitle, assignmentDesc,
-        new Date(assignmentDeadline).toISOString()
-      )
-      setAssignmentTitle('')
-      setAssignmentDesc('')
-      setAssignmentDeadline('')
-      const res = await assignmentsAPI.listAssignments(courseId)
-      setAssignments(res.data)
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al crear actividad')
-    }
   }
 
   if (loading) {
@@ -183,6 +167,12 @@ export default function CourseDetailPage() {
       <div className="max-w-6xl mx-auto p-8">
         {course?.description && <p className="text-gray-600 mb-6">{course.description}</p>}
 
+        {role === 'teacher' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800">
+            Panel de solo lectura. Crear/subir/calificar se hace desde Claude Code (<code>cli/README.md</code>).
+          </div>
+        )}
+
         <div className="flex gap-2 mb-6 border-b border-gray-300">
           {tabs.map((t) => (
             <button
@@ -197,35 +187,6 @@ export default function CourseDetailPage() {
 
         {tab === 'material' && (
           <div>
-            {role === 'teacher' && (
-              <form onSubmit={handleUploadMaterial} className="bg-white rounded-lg shadow p-6 mb-6 space-y-3">
-                <h3 className="font-bold text-gray-800">Subir Material</h3>
-                <input
-                  type="file"
-                  onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
-                  className="block w-full text-sm"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Nombre"
-                  value={materialName}
-                  onChange={(e) => setMaterialName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-                <input
-                  type="text"
-                  placeholder="Descripción (opcional)"
-                  value={materialDesc}
-                  onChange={(e) => setMaterialDesc(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
-                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium">
-                  Subir
-                </button>
-              </form>
-            )}
-
             {materials.length === 0 ? (
               <p className="text-gray-500 bg-white p-6 rounded-lg">No hay material cargado.</p>
             ) : (
@@ -236,22 +197,12 @@ export default function CourseDetailPage() {
                       <p className="font-medium text-gray-800">{m.name}</p>
                       {m.description && <p className="text-sm text-gray-500">{m.description}</p>}
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleDownloadMaterial(m)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
-                      >
-                        Descargar
-                      </button>
-                      {role === 'teacher' && (
-                        <button
-                          onClick={() => handleDeleteMaterial(m.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded text-sm"
-                        >
-                          Eliminar
-                        </button>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => handleDownloadMaterial(m)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-sm"
+                    >
+                      Descargar
+                    </button>
                   </div>
                 ))}
               </div>
@@ -261,56 +212,33 @@ export default function CourseDetailPage() {
 
         {tab === 'actividades' && (
           <div>
-            {role === 'teacher' && (
-              <form onSubmit={handleCreateAssignment} className="bg-white rounded-lg shadow p-6 mb-6 space-y-3">
-                <h3 className="font-bold text-gray-800">Crear Actividad</h3>
-                <input
-                  type="text"
-                  placeholder="Título"
-                  value={assignmentTitle}
-                  onChange={(e) => setAssignmentTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  required
-                />
-                <textarea
-                  placeholder="Descripción / consigna"
-                  value={assignmentDesc}
-                  onChange={(e) => setAssignmentDesc(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  rows={3}
-                />
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Fecha límite</label>
-                  <input
-                    type="datetime-local"
-                    value={assignmentDeadline}
-                    onChange={(e) => setAssignmentDeadline(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                </div>
-                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium">
-                  Crear Actividad
-                </button>
-              </form>
-            )}
-
             {assignments.length === 0 ? (
               <p className="text-gray-500 bg-white p-6 rounded-lg">No hay actividades creadas.</p>
             ) : (
               <div className="space-y-3">
-                {assignments.map((a) => (
-                  <div
-                    key={a.id}
-                    onClick={() => router.push(`/courses/${courseId}/assignments/${a.id}`)}
-                    className="bg-white rounded-lg shadow p-4 hover:shadow-lg cursor-pointer transition"
-                  >
-                    <p className="font-medium text-gray-800">{a.title}</p>
-                    <p className="text-sm text-gray-500">
-                      Fecha límite: {new Date(a.deadline).toLocaleString('es-AR')}
-                    </p>
-                  </div>
-                ))}
+                {assignments.map((a) => {
+                  const summary = assignmentSummaries[a.id]
+                  return (
+                    <div
+                      key={a.id}
+                      onClick={() => router.push(`/courses/${courseId}/assignments/${a.id}`)}
+                      className="bg-white rounded-lg shadow p-4 hover:shadow-lg cursor-pointer transition flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-800">{a.title}</p>
+                        <p className="text-sm text-gray-500">
+                          Fecha límite: {new Date(a.deadline).toLocaleString('es-AR')}
+                        </p>
+                      </div>
+                      {role === 'teacher' && summary && (
+                        <div className="text-right text-sm text-gray-600">
+                          <p>{summary.submitted} / {students.length} entregaron</p>
+                          <p>{summary.graded} / {summary.submitted} calificadas</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -318,29 +246,31 @@ export default function CourseDetailPage() {
 
         {tab === 'cuestionarios' && (
           <div>
-            {role === 'teacher' && (
-              <button
-                onClick={() => router.push(`/courses/${courseId}/quizzes/new`)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium mb-6"
-              >
-                Crear Cuestionario
-              </button>
-            )}
-
             {quizzes.length === 0 ? (
               <p className="text-gray-500 bg-white p-6 rounded-lg">No hay cuestionarios creados.</p>
             ) : (
               <div className="space-y-3">
-                {quizzes.map((q) => (
-                  <div
-                    key={q.id}
-                    onClick={() => router.push(`/courses/${courseId}/quizzes/${q.id}`)}
-                    className="bg-white rounded-lg shadow p-4 hover:shadow-lg cursor-pointer transition"
-                  >
-                    <p className="font-medium text-gray-800">{q.title}</p>
-                    {q.description && <p className="text-sm text-gray-500">{q.description}</p>}
-                  </div>
-                ))}
+                {quizzes.map((q) => {
+                  const summary = quizSummaries[q.id]
+                  return (
+                    <div
+                      key={q.id}
+                      onClick={() => router.push(`/courses/${courseId}/quizzes/${q.id}`)}
+                      className="bg-white rounded-lg shadow p-4 hover:shadow-lg cursor-pointer transition flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-800">{q.title}</p>
+                        {q.description && <p className="text-sm text-gray-500">{q.description}</p>}
+                      </div>
+                      {role === 'teacher' && summary && (
+                        <div className="text-right text-sm text-gray-600">
+                          <p>{summary.totalSubmissions} / {students.length} entregaron</p>
+                          <p>Promedio: {summary.averageScore !== null ? summary.averageScore.toFixed(2) : '—'} / 10</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

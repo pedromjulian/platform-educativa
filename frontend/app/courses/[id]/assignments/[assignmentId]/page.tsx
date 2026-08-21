@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { assignmentsAPI, gradingAPI, downloadFile } from '@/lib/api'
+import { assignmentsAPI, downloadFile } from '@/lib/api'
 
 interface Assignment {
   id: number
@@ -43,7 +43,6 @@ export default function AssignmentDetailPage() {
   const [submitError, setSubmitError] = useState('')
 
   const [submissions, setSubmissions] = useState<SubmissionDetail[]>([])
-  const [gradeInputs, setGradeInputs] = useState<Record<number, { grade: string; feedback: string }>>({})
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -93,26 +92,6 @@ export default function AssignmentDetailPage() {
       setSubmitError(err.response?.data?.detail || 'Error al entregar')
     } finally {
       setSubmitting(false)
-    }
-  }
-
-  const handleGrade = async (submissionId: number) => {
-    const input = gradeInputs[submissionId]
-    if (!input || input.grade === '') {
-      alert('Ingresá una nota')
-      return
-    }
-    const grade = parseFloat(input.grade)
-    if (isNaN(grade) || grade < 0 || grade > 10) {
-      alert('La nota debe estar entre 0 y 10')
-      return
-    }
-    try {
-      await gradingAPI.gradeSubmission(courseId, submissionId, grade, input.feedback)
-      const subsRes = await assignmentsAPI.listSubmissions(courseId, assignmentId)
-      setSubmissions(subsRes.data)
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Error al calificar')
     }
   }
 
@@ -203,6 +182,9 @@ export default function AssignmentDetailPage() {
 
         {role === 'teacher' && (
           <div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-sm text-blue-800">
+              Panel de solo lectura. Para calificar, usá Claude Code (<code>cli/README.md</code>).
+            </div>
             <h3 className="font-bold text-gray-800 mb-4">Entregas ({submissions.length})</h3>
             {submissions.length === 0 ? (
               <p className="text-gray-500 bg-white p-6 rounded-lg">No hay entregas todavía.</p>
@@ -239,41 +221,7 @@ export default function AssignmentDetailPage() {
                         {sub.feedback && <p className="text-gray-700 text-sm mt-1">{sub.feedback}</p>}
                       </div>
                     ) : (
-                      <div className="flex gap-2 items-start">
-                        <input
-                          type="number"
-                          min="0"
-                          max="10"
-                          step="0.1"
-                          placeholder="Nota"
-                          value={gradeInputs[sub.id]?.grade || ''}
-                          onChange={(e) =>
-                            setGradeInputs({
-                              ...gradeInputs,
-                              [sub.id]: { grade: e.target.value, feedback: gradeInputs[sub.id]?.feedback || '' },
-                            })
-                          }
-                          className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
-                        />
-                        <textarea
-                          placeholder="Feedback"
-                          value={gradeInputs[sub.id]?.feedback || ''}
-                          onChange={(e) =>
-                            setGradeInputs({
-                              ...gradeInputs,
-                              [sub.id]: { grade: gradeInputs[sub.id]?.grade || '', feedback: e.target.value },
-                            })
-                          }
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-                          rows={2}
-                        />
-                        <button
-                          onClick={() => handleGrade(sub.id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
-                        >
-                          Calificar
-                        </button>
-                      </div>
+                      <p className="text-yellow-600 text-sm">Pendiente de calificación</p>
                     )}
                   </div>
                 ))}

@@ -17,8 +17,6 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [role, setRole] = useState<string | null>(null)
-  const [newCourseName, setNewCourseName] = useState('')
-  const [newCourseDesc, setNewCourseDesc] = useState('')
   const [joinCourseId, setJoinCourseId] = useState('')
   const [joinError, setJoinError] = useState('')
 
@@ -41,18 +39,6 @@ export default function DashboardPage() {
       console.error('Error loading courses:', err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleCreateCourse = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await coursesAPI.createCourse(newCourseName, newCourseDesc)
-      setNewCourseName('')
-      setNewCourseDesc('')
-      loadCourses()
-    } catch (err) {
-      console.error('Error creating course:', err)
     }
   }
 
@@ -115,31 +101,9 @@ export default function DashboardPage() {
         )}
 
         {role === 'teacher' && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Crear Nuevo Curso</h2>
-            <form onSubmit={handleCreateCourse} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Nombre del curso"
-                value={newCourseName}
-                onChange={(e) => setNewCourseName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                required
-              />
-              <textarea
-                placeholder="Descripción (opcional)"
-                value={newCourseDesc}
-                onChange={(e) => setNewCourseDesc(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                rows={3}
-              />
-              <button
-                type="submit"
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium"
-              >
-                Crear Curso
-              </button>
-            </form>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-sm text-blue-800">
+            Este panel es de solo lectura. Para crear cursos, material, actividades y
+            cuestionarios, o para calificar entregas, usá Claude Code (ver <code>cli/README.md</code> en el repo).
           </div>
         )}
 

@@ -28,28 +28,12 @@ export const authAPI = {
 export const coursesAPI = {
   listCourses: () => api.get('/courses/'),
   getCourse: (courseId: number) => api.get(`/courses/${courseId}`),
-  createCourse: (name: string, description?: string) =>
-    api.post('/courses/', { name, description }),
-  updateCourse: (courseId: number, name: string, description?: string) =>
-    api.put(`/courses/${courseId}`, { name, description }),
-  deleteCourse: (courseId: number) => api.delete(`/courses/${courseId}`),
   enrollCourse: (courseId: number) => api.post(`/courses/${courseId}/enroll`),
   listStudents: (courseId: number) => api.get(`/courses/${courseId}/students`),
 }
 
 export const materialsAPI = {
   list: (courseId: number) => api.get(`/courses/${courseId}/materials`),
-  upload: (courseId: number, file: File, name: string, description?: string) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('name', name)
-    if (description) formData.append('description', description)
-    return api.post(`/courses/${courseId}/materials`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-  },
-  delete: (courseId: number, materialId: number) =>
-    api.delete(`/courses/${courseId}/materials/${materialId}`),
   downloadUrl: (courseId: number, materialId: number) =>
     `/courses/${courseId}/materials/${materialId}/download`,
 }
@@ -57,8 +41,6 @@ export const materialsAPI = {
 export const assignmentsAPI = {
   listAssignments: (courseId: number) =>
     api.get(`/courses/${courseId}/assignments`),
-  createAssignment: (courseId: number, title: string, description?: string, deadline?: string) =>
-    api.post(`/courses/${courseId}/assignments`, { title, description, deadline }),
   submitAssignment: (assignmentId: number, textContent?: string, file?: File) => {
     const formData = new FormData()
     if (textContent) formData.append('text_content', textContent)
@@ -75,28 +57,6 @@ export const assignmentsAPI = {
     `/courses/${courseId}/submissions/${submissionId}/download`,
 }
 
-export const gradingAPI = {
-  gradeSubmission: (courseId: number, submissionId: number, grade: number, feedback?: string) =>
-    api.patch(`/courses/${courseId}/submissions/${submissionId}/grade`, { grade, feedback }),
-}
-
-export interface QuizOptionInput {
-  text: string
-  fraction: number
-}
-
-export interface QuizQuestionInput {
-  text: string
-  options: QuizOptionInput[]
-}
-
-export interface QuizCreateInput {
-  title: string
-  description?: string
-  deadline?: string
-  questions: QuizQuestionInput[]
-}
-
 export interface QuizAnswerInput {
   question_id: number
   selected_option_ids: number[]
@@ -104,12 +64,8 @@ export interface QuizAnswerInput {
 
 export const quizzesAPI = {
   list: (courseId: number) => api.get(`/courses/${courseId}/quizzes`),
-  create: (courseId: number, payload: QuizCreateInput) =>
-    api.post(`/courses/${courseId}/quizzes`, payload),
   getTeacherView: (courseId: number, quizId: number) =>
     api.get(`/courses/${courseId}/quizzes/${quizId}`),
-  delete: (courseId: number, quizId: number) =>
-    api.delete(`/courses/${courseId}/quizzes/${quizId}`),
   take: (quizId: number) => api.get(`/quizzes/${quizId}/take`),
   submit: (quizId: number, answers: QuizAnswerInput[]) =>
     api.post(`/quizzes/${quizId}/submit`, { answers }),
