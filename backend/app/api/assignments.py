@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -6,7 +6,7 @@ from datetime import datetime
 from ..database import get_db
 from ..models import User, Course, Assignment, Submission, UserRole, Enrollment, SubmissionStatus
 from ..schemas import (
-    AssignmentCreate, AssignmentResponse, SubmissionCreate, SubmissionResponse,
+    AssignmentCreate, AssignmentResponse, SubmissionResponse,
     SubmissionDetailResponse
 )
 from ..auth import get_current_user
@@ -120,7 +120,7 @@ def delete_assignment(
 @router.post("/assignments/{assignment_id}/submit", response_model=SubmissionResponse)
 async def submit_assignment(
     assignment_id: int,
-    submission: SubmissionCreate,
+    text_content: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -152,7 +152,7 @@ async def submit_assignment(
         file_path = await save_submission_file(file, assignment.course_id, assignment_id, current_user.id)
 
     if existing_submission:
-        existing_submission.text_content = submission.text_content
+        existing_submission.text_content = text_content
         existing_submission.file_path = file_path or existing_submission.file_path
         existing_submission.submitted_at = now
         existing_submission.is_late = is_late
@@ -163,7 +163,7 @@ async def submit_assignment(
     new_submission = Submission(
         assignment_id=assignment_id,
         student_id=current_user.id,
-        text_content=submission.text_content,
+        text_content=text_content,
         file_path=file_path,
         is_late=is_late
     )

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from ..database import get_db
 from ..models import User, Course, Material, UserRole, Enrollment
@@ -14,8 +14,8 @@ router = APIRouter(prefix="/courses", tags=["materials"])
 async def upload_material(
     course_id: int,
     file: UploadFile = File(...),
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
