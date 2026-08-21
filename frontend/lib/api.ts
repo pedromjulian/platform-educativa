@@ -26,10 +26,10 @@ export const authAPI = {
 }
 
 export const coursesAPI = {
-  listCourses: () => api.get('/courses'),
+  listCourses: () => api.get('/courses/'),
   getCourse: (courseId: number) => api.get(`/courses/${courseId}`),
   createCourse: (name: string, description?: string) =>
-    api.post('/courses', { name, description }),
+    api.post('/courses/', { name, description }),
   updateCourse: (courseId: number, name: string, description?: string) =>
     api.put(`/courses/${courseId}`, { name, description }),
   deleteCourse: (courseId: number) => api.delete(`/courses/${courseId}`),
