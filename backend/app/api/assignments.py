@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
@@ -7,10 +8,10 @@ from ..database import get_db
 from ..models import User, Course, Assignment, Submission, UserRole, Enrollment, SubmissionStatus
 from ..schemas import (
     AssignmentCreate, AssignmentResponse, SubmissionResponse,
-    SubmissionDetailResponse
+    SubmissionDetailResponse, SubmissionWithFileResponse
 )
 from ..auth import get_current_user
-from ..utils.file_handler import save_submission_file, delete_file
+from ..utils.file_handler import save_submission_file, delete_file, get_file_path
 
 router = APIRouter(tags=["assignments"])
 
@@ -117,7 +118,7 @@ def delete_assignment(
     db.commit()
     return {"message": "Assignment deleted"}
 
-@router.post("/assignments/{assignment_id}/submit", response_model=SubmissionResponse)
+@router.post("/assignments/{assignment_id}/submit", response_model=SubmissionWithFileResponse)
 async def submit_assignment(
     assignment_id: int,
     text_content: Optional[str] = Form(None),
@@ -172,7 +173,7 @@ async def submit_assignment(
     db.refresh(new_submission)
     return new_submission
 
-@router.get("/assignments/{assignment_id}/submission", response_model=SubmissionResponse)
+@router.get("/assignments/{assignment_id}/submission", response_model=SubmissionWithFileResponse)
 def get_my_submission(
     assignment_id: int,
     current_user: User = Depends(get_current_user),
@@ -221,3 +222,31 @@ def list_submissions(
 
     submissions = query.all()
     return submissions
+
+@router.get("/courses/{course_id}/submissions/{submission_id}/download")
+def download_submission_file(
+    course_id: int,
+    submission_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    if not submission:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+
+    assignment = db.query(Assignment).filter(Assignment.id == submission.assignment_id).first()
+    course = db.query(Course).filter(Course.id == course_id, Course.id == assignment.course_id).first()
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+
+    is_owner_teacher = course.teacher_id == current_user.id
+    is_submission_author = submission.student_id == current_user.id
+    if not is_owner_teacher and not is_submission_author:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    if not submission.file_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission has no file")
+
+    full_path = get_file_path(submission.file_path)
+    filename = full_path.name
+    return FileResponse(full_path, filename=filename)

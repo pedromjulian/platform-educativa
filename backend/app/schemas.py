@@ -113,6 +113,7 @@ class SubmissionResponse(BaseModel):
 class SubmissionDetailResponse(SubmissionResponse):
     assignment: AssignmentResponse
     student: UserResponse
+    file_path: Optional[str] = None
 
 class SubmissionWithFileResponse(SubmissionResponse):
     file_path: Optional[str]

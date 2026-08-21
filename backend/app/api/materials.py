@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -6,7 +7,7 @@ from ..database import get_db
 from ..models import User, Course, Material, UserRole, Enrollment
 from ..schemas import MaterialCreate, MaterialResponse
 from ..auth import get_current_user
-from ..utils.file_handler import save_material_file, delete_file
+from ..utils.file_handler import save_material_file, delete_file, get_file_path
 
 router = APIRouter(prefix="/courses", tags=["materials"])
 
@@ -59,6 +60,34 @@ def list_materials(
 
     materials = db.query(Material).filter(Material.course_id == course_id).all()
     return materials
+
+@router.get("/{course_id}/materials/{material_id}/download")
+def download_material(
+    course_id: int,
+    material_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+
+    if current_user.role == UserRole.STUDENT:
+        enrollment = db.query(Enrollment).filter(
+            Enrollment.course_id == course_id,
+            Enrollment.student_id == current_user.id
+        ).first()
+        if not enrollment:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enrolled in this course")
+    elif course.teacher_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    material = db.query(Material).filter(Material.id == material_id, Material.course_id == course_id).first()
+    if not material:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material not found")
+
+    full_path = get_file_path(material.file_path)
+    return FileResponse(full_path, filename=material.name)
 
 @router.delete("/{course_id}/materials/{material_id}")
 def delete_material(
