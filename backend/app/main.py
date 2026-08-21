@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
-from .api import auth, courses, materials, assignments, grading
+from .api import auth, courses, materials, assignments, grading, quizzes
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,6 +21,7 @@ app.include_router(courses.router)
 app.include_router(materials.router)
 app.include_router(assignments.router)
 app.include_router(grading.router)
+app.include_router(quizzes.router)
 
 @app.get("/")
 def read_root():

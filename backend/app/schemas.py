@@ -144,3 +144,125 @@ class AssignmentExportResponse(BaseModel):
     course_id: int
     deadline: datetime
     submissions: List[SubmissionExportResponse]
+
+class QuestionOptionCreate(BaseModel):
+    text: str
+    fraction: float
+
+class QuestionCreate(BaseModel):
+    text: str
+    options: List[QuestionOptionCreate]
+
+class QuizCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    deadline: Optional[datetime] = None
+    questions: List[QuestionCreate]
+
+class QuestionOptionTeacherView(BaseModel):
+    id: int
+    text: str
+    fraction: float
+    order: int
+
+    class Config:
+        from_attributes = True
+
+class QuestionTeacherView(BaseModel):
+    id: int
+    text: str
+    order: int
+    options: List[QuestionOptionTeacherView]
+
+    class Config:
+        from_attributes = True
+
+class QuizTeacherView(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: Optional[str]
+    deadline: Optional[datetime]
+    created_at: datetime
+    questions: List[QuestionTeacherView]
+
+    class Config:
+        from_attributes = True
+
+class QuizListResponse(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: Optional[str]
+    deadline: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class QuestionOptionStudentView(BaseModel):
+    id: int
+    text: str
+    order: int
+
+    class Config:
+        from_attributes = True
+
+class QuestionStudentView(BaseModel):
+    id: int
+    text: str
+    order: int
+    options: List[QuestionOptionStudentView]
+
+    class Config:
+        from_attributes = True
+
+class QuizStudentView(BaseModel):
+    id: int
+    course_id: int
+    title: str
+    description: Optional[str]
+    deadline: Optional[datetime]
+    questions: List[QuestionStudentView]
+
+    class Config:
+        from_attributes = True
+
+class QuizAnswerSubmit(BaseModel):
+    question_id: int
+    selected_option_ids: List[int]
+
+class QuizSubmitRequest(BaseModel):
+    answers: List[QuizAnswerSubmit]
+
+class QuestionScoreBreakdown(BaseModel):
+    question_id: int
+    score: float
+    selected_option_ids: List[int]
+
+class QuizSubmissionResult(BaseModel):
+    id: int
+    quiz_id: int
+    student_id: int
+    submitted_at: datetime
+    score: float
+    breakdown: List[QuestionScoreBreakdown]
+
+class OptionStatsResponse(BaseModel):
+    option_id: int
+    text: str
+    fraction: float
+    times_selected: int
+
+class QuestionStatsResponse(BaseModel):
+    question_id: int
+    text: str
+    options: List[OptionStatsResponse]
+
+class QuizSubmissionsExportResponse(BaseModel):
+    quiz_id: int
+    quiz_title: str
+    course_id: int
+    total_submissions: int
+    average_score: Optional[float]
+    question_stats: List[QuestionStatsResponse]
