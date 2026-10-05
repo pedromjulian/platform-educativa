@@ -47,3 +47,8 @@ database.db
 *.sqlite3
 
 .claude/
+
+# Documentos comerciales confidenciales — borrar estas líneas si el repo es
+# privado y querés versionarlos.
+PLAN-DE-NEGOCIOS.md
+TEASER-SOCIA.md

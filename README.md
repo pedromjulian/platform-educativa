@@ -137,3 +137,15 @@ Frontend disponible en: http://localhost:3000
 ## Más info
 
 Ver `backend/README.md` para detalles de API y testing.
+
+---
+
+## Licencia
+
+Copyright © 2026 Pedro Julián. **Todos los derechos reservados.**
+
+Software propietario. No es código abierto. Está prohibido copiarlo, modificarlo, desplegarlo o usarlo para prestar servicios a terceros sin autorización escrita previa. Ver [`LICENSE`](LICENSE).
+
+El acceso a este repositorio no transfiere derechos de propiedad intelectual. Las contribuciones se ceden al titular salvo acuerdo escrito en contrario.
+
+Consultas: pedro.julian@gmail.com

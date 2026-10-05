@@ -1,0 +1,37 @@
+SOFTWARE PROPIETARIO — Platform Educativa
+Copyright (c) 2026 Pedro Julián. Todos los derechos reservados.
+
+Este software y toda la documentación que lo acompaña son propiedad exclusiva de
+Pedro Julián. NO es software libre ni de código abierto.
+
+PROHIBIDO SIN AUTORIZACIÓN ESCRITA PREVIA DEL TITULAR:
+
+  - copiar, reproducir o distribuir el código fuente o los binarios, total o
+    parcialmente;
+  - modificar, adaptar, traducir o crear obras derivadas;
+  - realizar ingeniería inversa, descompilar o desensamblar;
+  - usar el software para prestar servicios a terceros, de forma gratuita u
+    onerosa;
+  - desplegar instancias propias del software;
+  - sublicenciar, vender, alquilar, ceder o transferir cualquier derecho sobre
+    el software;
+  - remover o alterar los avisos de copyright.
+
+ACCESO AL REPOSITORIO. El acceso a este repositorio, otorgado a colaboradores,
+socios, empleados o contratistas, no transfiere ningún derecho de propiedad
+intelectual. Toda contribución realizada al repositorio se cede al titular,
+salvo acuerdo escrito en contrario.
+
+DOCUMENTACIÓN CONFIDENCIAL. Los documentos de estrategia comercial de este
+repositorio, incluidos PLAN-DE-NEGOCIOS.md y TEASER-SOCIA.md, son información
+confidencial. No deben publicarse, compartirse ni incorporarse a un repositorio
+de acceso público sin autorización expresa del titular.
+
+SIN GARANTÍA. El software se provee "tal cual", sin garantía de ningún tipo. El
+titular no será responsable por daños derivados de su uso.
+
+COMPONENTES DE TERCEROS. Las dependencias de software de terceros (FastAPI,
+SQLAlchemy, Next.js, y las demás listadas en requirements.txt y package.json)
+se rigen por sus propias licencias y no están cubiertas por este aviso.
+
+Consultas sobre licenciamiento: pedro.julian@gmail.com
